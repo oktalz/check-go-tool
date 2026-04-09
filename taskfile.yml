@@ -1,0 +1,113 @@
+#https://taskfile.dev/
+version: "3"
+
+vars:
+  BETTERALIGN: github.com/dkorunic/betteralign/cmd/betteralign@v0.9.1
+  STATICCHECK: honnef.co/go/tools/cmd/staticcheck@v0.7.0
+  GOFUMPT: mvdan.cc/gofumpt@v0.9.2
+  REVIVE: github.com/mgechev/revive@v1.15.0
+  GOTESTSUM: gotest.tools/gotestsum@v1.13.0
+
+env:
+  TMP: tmp
+
+dotenv:
+  - .env
+
+tasks:
+  ci:
+    desc: "run all checks"
+    cmds:
+      - task: tidy
+      - task: format
+      - task: lint
+      - task: test
+
+  test:
+    desc: "run Go tests"
+    vars:
+      PKG: '{{default "./..." .PKG}}'
+      FORMAT: '{{default "testdox" .FORMAT}}'
+      GOTESTSUM_BIN:
+        sh: go run . {{.GOTESTSUM}}
+    cmds:
+      - |
+        {{.GOTESTSUM_BIN}} \
+          --format-icons=hivis \
+          --format={{.FORMAT}} \
+          --format-hide-empty-pkg \
+          -- {{if .COUNT}}-count={{.COUNT}}{{end}} \
+            -v \
+            -coverprofile=coverage.out \
+            {{.PKG}}
+      - go tool cover -func=coverage.out
+      - defer: rm -f coverage.out
+  tidy:
+    desc: "run Go mod tidy"
+    cmds:
+      - go mod tidy
+
+  lint:
+    desc: "run Go linters"
+    deps:
+      - task: check-go-tools
+        vars:
+          TOOLS: [BETTERALIGN, REVIVE, STATICCHECK]
+    vars:
+      REVIVE_BIN:
+        sh: go run . {{.REVIVE}}
+      STATICCHECK_BIN:
+        sh: go run . {{.STATICCHECK}}
+      BETTERALIGN_BIN:
+        sh: go run . {{.BETTERALIGN}}
+    cmds:
+      - "{{.REVIVE_BIN}} -formatter friendly -set_exit_status ./..."
+      - "{{.STATICCHECK_BIN}} ./..."
+      - "{{.BETTERALIGN_BIN}} ./..."
+
+  format:
+    desc: "format the code"
+    deps:
+      - task: check-go-tools
+        vars:
+          TOOLS: [BETTERALIGN, GOFUMPT]
+    vars:
+      BETTERALIGN_BIN:
+        sh: go run . {{.BETTERALIGN}}
+      GOFUMPT_BIN:
+        sh: go run . {{.GOFUMPT}}
+    cmds:
+      - go fix ./...
+      - "{{.BETTERALIGN_BIN}} -apply ./... || true"
+      - "{{.GOFUMPT_BIN}} -l -w ."
+
+  govulncheck:
+    deps:
+      - task: check-go-tool
+        vars:
+          TOOL: GOVULNCHECK
+    vars:
+      GOVULNCHECK_BIN:
+        sh: go run . {{.GOVULNCHECK}}
+    cmds:
+      - "{{.GOVULNCHECK_BIN}} -show verbose ./..."
+
+# Internal tasks
+
+  check-go-tool:
+    desc: 'ensure go tool is installed/available'
+    silent: true
+    internal: true
+    cmds:
+      - go run . '{{ index . .TOOL }}' >/dev/null
+
+  check-go-tools:
+    desc: 'ensure all go tools are installed'
+    silent: true
+    internal: true
+    cmds:
+      - for:
+          var: TOOLS
+        task: check-go-tool
+        vars:
+          TOOL: '{{.ITEM}}'
