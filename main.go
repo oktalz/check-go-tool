@@ -79,7 +79,12 @@ func run(args []string) int {
 	if tmpDir == "" {
 		tmpDir = "/tmp"
 	}
-	cachePath := filepath.Join(tmpDir, name, ".latest-version")
+
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		cacheDir = tmpDir
+	}
+	cachePath := filepath.Join(cacheDir, "check-go-tool", name, ".latest-version")
 
 	// Handle --check flag (version check mode)
 	if *check {
@@ -222,7 +227,7 @@ func getBuildGoVersion(path string) string {
 
 // handleCheck checks if a newer version is available and reports it.
 // This is check-only mode - no installation is performed.
-// Results are cached for 23 hours in $TMPDIR/<name>/.latest-version.
+// Results are cached for 23 hours in the user's cache directory.
 // Exit codes: 0 if up-to-date or ahead, 1 if update available or error.
 func handleCheck(name, currentVersion, importPath, cachePath string) int {
 	latestVersion, ok := readCache(cachePath)
