@@ -84,7 +84,10 @@ check-go-tool --check mvdan.cc/gofumpt@v0.10.0
 
 ```bash
 check-go-tool version
-# Output: v1.0.0.a1b2c3d4
+# Output:
+#   check-go-tool v1.0.0
+#   built-from github.com/oktalz/check-go-tool
+#   commit-date 2026-04-12T10:30:00Z
 
 check-go-tool tag
 # Output: v1.0.0

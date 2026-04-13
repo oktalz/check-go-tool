@@ -38,7 +38,8 @@ func run(args []string) int {
 		fmt.Fprintf(os.Stderr, "  %s mvdan.cc/gofumpt@v0.9.2\n", progName)
 		fmt.Fprintf(os.Stderr, "  %s mvdan.cc/gofumpt@latest\n", progName)
 		fmt.Fprintf(os.Stderr, "  %s --check mvdan.cc/gofumpt@v0.9.2\n", progName)
-		fmt.Fprintf(os.Stderr, "  %s version\n\n", progName)
+		fmt.Fprintf(os.Stderr, "  %s version\n", progName)
+		fmt.Fprintf(os.Stderr, "  %s tag\n\n", progName)
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		fs.PrintDefaults()
 	}
@@ -46,10 +47,17 @@ func run(args []string) int {
 	if len(args) > 0 {
 		switch args[0] {
 		case "version":
-			fmt.Println(version.Version)
+			fmt.Print(version.Logo)
+			fmt.Println(progName, version.Version)
+			if version.Repo != "" {
+				fmt.Println("built-from", version.Repo)
+			}
+			if version.CommitDate != "" {
+				fmt.Println("commit-date", version.CommitDate)
+			}
 			return 0
 		case "tag":
-			fmt.Println(version.Tag)
+			fmt.Println(version.Version)
 			return 0
 		}
 	}
