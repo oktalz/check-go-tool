@@ -840,7 +840,12 @@ func TestRun(t *testing.T) {
 	t.Run("check_flag_with_cached_version", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		t.Setenv("TMPDIR", tmpDir)
-		cachePath := filepath.Join(tmpDir, "gofumpt", ".latest-version")
+		t.Setenv("XDG_CACHE_HOME", tmpDir)
+		cacheDir, err := os.UserCacheDir()
+		if err != nil {
+			t.Fatalf("UserCacheDir: %v", err)
+		}
+		cachePath := filepath.Join(cacheDir, "check-go-tool", "gofumpt", ".latest-version")
 		writeCache(cachePath, "v0.9.2")
 
 		code := run([]string{"--check", "mvdan.cc/gofumpt@v0.9.2"})
