@@ -379,9 +379,25 @@ func writeCache(path, version string) {
 }
 
 // getLatestVersion queries the latest version of a module from Go modules.
-// It uses `go list -m -json <importPath>@latest` and parses the JSON response.
+// Tools often live in a /cmd/<name> subpath while the module root is the
+// parent, so we walk up the path until `go list` resolves a module.
 func getLatestVersion(importPath string) (string, error) {
-	cmd := exec.Command("go", "list", "-m", "-json", importPath+"@latest")
+	path := importPath
+	var lastErr error
+	for strings.Contains(path, "/") {
+		v, err := goListLatest(path)
+		if err == nil {
+			return v, nil
+		}
+		lastErr = err
+		path = path[:strings.LastIndex(path, "/")]
+	}
+	return "", lastErr
+}
+
+// goListLatest runs `go list -m -json <path>@latest` and returns the version.
+func goListLatest(path string) (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-json", path+"@latest")
 	out, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("go list failed: %w", err)
