@@ -159,7 +159,9 @@ tasks:
 3. **Install**: Run `go install <path>@<version>` with `GOBIN=$TMPDIR/<name>/<version>`
    -> Use newly installed binary
 
-After resolving, the tool checks `$TMPDIR/<name>/.latest-version` for a cached latest version.
+After resolving, the tool checks the user cache dir for a cached latest version
+(`<cache>/check-go-tool/<name>/.latest-version`, where `<cache>` is `os.UserCacheDir()`,
+e.g. `~/.cache` on Linux).
 If no cache exists, it queries the upstream Go module proxy and populates the cache.
 If a newer version is available, a notice is printed to stderr:
 
@@ -180,20 +182,21 @@ The binary lives in the default GOBIN (e.g. `~/go/bin`), not in the tmp folder.
 ### Check mode (`--check`)
 
 - Queries latest version via `go list -m -json <path>@latest` (requires network)
-- Caches the result in `$TMPDIR/<name>/.latest-version` for 23 hours
+- Caches the result in `<user-cache-dir>/check-go-tool/<name>/.latest-version` for 23 hours
 - Compares the requested version against latest using semantic versioning
 - Reports result to stderr and exits (no install, no path output)
 
 ### Version cache
 
-All modes share the same cache file at `$TMPDIR/<name>/.latest-version` with a 23-hour TTL.
+All modes share the same cache file at `<user-cache-dir>/check-go-tool/<name>/.latest-version` with a 23-hour TTL.
 The cache is populated on first use (any mode) and refreshed after expiry.
 Normal pinned-version runs show a passive update notice from cache; `--check` forces
 an explicit check and reports the result as its exit code.
 
 ## Environment Variables
 
-- `TMPDIR`: Used for local tool cache and version cache (defaults to `/tmp` on Unix if not set)
+- `TMPDIR`: Used for the local tool binary cache (defaults to `/tmp` on Unix if not set)
+- `XDG_CACHE_HOME`: Overrides the version cache location on Linux (defaults to `~/.cache`)
 
 ## Exit Codes
 
@@ -207,7 +210,7 @@ The `--check` flag queries the upstream Go module proxy for the latest version, 
 **Behavior:**
 
 - Queries the latest available version from upstream Go modules
-- Caches the result for 23 hours in `$TMPDIR/<name>/.latest-version`
+- Caches the result for 23 hours in `<user-cache-dir>/check-go-tool/<name>/.latest-version`
 - Compares the requested version with latest version
 - Outputs human-readable status message to stderr
 - Does NOT install or modify any files
