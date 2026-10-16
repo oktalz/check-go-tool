@@ -2,11 +2,12 @@
 version: "3"
 
 vars:
-  BETTERALIGN: github.com/dkorunic/betteralign/cmd/betteralign@v0.11.0
-  STATICCHECK: honnef.co/go/tools/cmd/staticcheck@v0.7.0
-  GOFUMPT: mvdan.cc/gofumpt@v0.10.0
-  REVIVE: github.com/mgechev/revive@v1.15.0
+  BETTERALIGN: github.com/dkorunic/betteralign/cmd/betteralign@v0.15.3
+  STATICCHECK: honnef.co/go/tools/cmd/staticcheck@v0.8.2
+  GOFUMPT: mvdan.cc/gofumpt@v0.12.0
+  REVIVE: github.com/mgechev/revive@v1.17.1
   GOTESTSUM: gotest.tools/gotestsum@v1.13.0
+  GOVULNCHECK: golang.org/x/vuln/cmd/govulncheck@v1.9.0
 
 env:
   TMP: tmp
