@@ -40,10 +40,8 @@ func Set() error {
 	Repo = buildInfo.Main.Path
 	CommitDate = get(buildInfo, "vcs.time")
 
+	// Go 1.24+ already appends "+dirty" for modified trees.
 	Version = strings.Replace(buildInfo.Main.Version, "(devel)", "dev", 1)
-	if get(buildInfo, "vcs.modified") == "true" {
-		Version += "+dirty"
-	}
 
 	return nil
 }

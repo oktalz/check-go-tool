@@ -2,12 +2,12 @@
 version: "3"
 
 vars:
-  BETTERALIGN: github.com/dkorunic/betteralign/cmd/betteralign@v0.15.3
+  BETTERALIGN: github.com/dkorunic/betteralign/cmd/betteralign@v0.16.1
   STATICCHECK: honnef.co/go/tools/cmd/staticcheck@v0.8.2
   GOFUMPT: mvdan.cc/gofumpt@v0.12.0
   REVIVE: github.com/mgechev/revive@v1.17.1
   GOTESTSUM: gotest.tools/gotestsum@v1.13.0
-  GOVULNCHECK: golang.org/x/vuln/cmd/govulncheck@v1.9.0
+  GOVULNCHECK: golang.org/x/vuln/cmd/govulncheck@v1.10.0
 
 env:
   TMP: tmp
@@ -15,6 +15,7 @@ env:
 dotenv:
   - .env
 
+# Tool *_BIN vars run `go run .`, which installs the tool if needed.
 tasks:
   ci:
     desc: "run all checks"
@@ -23,6 +24,7 @@ tasks:
       - task: format
       - task: lint
       - task: test
+      - task: govulncheck
 
   test:
     desc: "run Go tests"
@@ -32,6 +34,7 @@ tasks:
       GOTESTSUM_BIN:
         sh: go run . {{.GOTESTSUM}}
     cmds:
+      - defer: rm -f coverage.out
       - |
         {{.GOTESTSUM_BIN}} \
           --format-icons=hivis \
@@ -42,7 +45,7 @@ tasks:
             -coverprofile=coverage.out \
             {{.PKG}}
       - go tool cover -func=coverage.out
-      - defer: rm -f coverage.out
+
   tidy:
     desc: "run Go mod tidy"
     cmds:
@@ -50,10 +53,6 @@ tasks:
 
   lint:
     desc: "run Go linters"
-    deps:
-      - task: check-go-tools
-        vars:
-          TOOLS: [BETTERALIGN, REVIVE, STATICCHECK]
     vars:
       REVIVE_BIN:
         sh: go run . {{.REVIVE}}
@@ -68,10 +67,6 @@ tasks:
 
   format:
     desc: "format the code"
-    deps:
-      - task: check-go-tools
-        vars:
-          TOOLS: [BETTERALIGN, GOFUMPT]
     vars:
       BETTERALIGN_BIN:
         sh: go run . {{.BETTERALIGN}}
@@ -83,32 +78,9 @@ tasks:
       - "{{.GOFUMPT_BIN}} -l -w ."
 
   govulncheck:
-    deps:
-      - task: check-go-tool
-        vars:
-          TOOL: GOVULNCHECK
+    desc: "scan for known vulnerabilities"
     vars:
       GOVULNCHECK_BIN:
         sh: go run . {{.GOVULNCHECK}}
     cmds:
       - "{{.GOVULNCHECK_BIN}} -show verbose ./..."
-
-# Internal tasks
-
-  check-go-tool:
-    desc: 'ensure go tool is installed/available'
-    silent: true
-    internal: true
-    cmds:
-      - go run . '{{ index . .TOOL }}' >/dev/null
-
-  check-go-tools:
-    desc: 'ensure all go tools are installed'
-    silent: true
-    internal: true
-    cmds:
-      - for:
-          var: TOOLS
-        task: check-go-tool
-        vars:
-          TOOL: '{{.ITEM}}'
